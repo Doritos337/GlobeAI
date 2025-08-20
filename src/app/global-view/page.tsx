@@ -39,7 +39,7 @@ type CountryData = {
 async function getData() {
   try {
     // --- Step 1: Load data from PostgreSQL ---
-    const countriesResult = await pool.query('SELECT * FROM countries');
+    const countriesResult = await pool.query('SELECT * FROM public.countries');
     const countriesData: CountryData[] = countriesResult.rows;
 
     const countriesDataMap = new Map(
