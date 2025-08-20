@@ -23,7 +23,6 @@ const eslintConfig = [
     rules: {
       // ✅ YOUR FIX: This now correctly disables the rule because the plugin is active
       "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
     },
   },
 ];
