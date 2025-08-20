@@ -2,7 +2,6 @@ import { Pool } from 'pg';
 
 // This prevents TypeScript errors when we attach the pool to the global object.
 declare global {
-  // eslint-disable-next-line no-var
   var pgPool: Pool | undefined;
 }
 

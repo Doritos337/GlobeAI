@@ -1,6 +1,6 @@
 "use client";
 
-import { useStore, Country } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import {
   Dialog,
   DialogContent,

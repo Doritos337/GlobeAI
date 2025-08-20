@@ -119,10 +119,9 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    // ✅ ИСПРАВЛЕНИЕ 1: Упрощаем тип, чтобы TypeScript не выдавал ошибку.
-    // Мы знаем, что структура, которую мы создаем, правильная для MapLibre.
-    const filterExpression: any[] = ["all"];
-
+    // ✅ ADD THIS COMMENT TO IGNORE THE 'any' ERROR ON THE NEXT LINE
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filterExpression: any[] = ['all'];
     // ✅ ИСПРАВЛЕНИЕ 2: Возвращаем правильное начальное значение для стоимости жизни.
     // "Выключенное" состояние - это максимальная стоимость (5), чтобы видеть все страны.
     const initialFilterValues = {
