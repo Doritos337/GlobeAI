@@ -10,7 +10,7 @@ const filterConfig = [
     label: 'Happiness Level',
     key: 'happiness_level_score' as keyof Filters,
     min: 0,
-    max: 10,
+    max: 5,
     step: 1,
   },
   {
@@ -18,7 +18,7 @@ const filterConfig = [
     label: 'Cost of Living',
     key: 'cost_of_country_score' as keyof Filters,
     min: 0,
-    max: 10,
+    max: 5,
     step: 1,
   },
   {
@@ -26,7 +26,7 @@ const filterConfig = [
     label: 'Traffic Safety',
     key: 'traffic_safety_score' as keyof Filters,
     min: 0,
-    max: 10,
+    max: 5,
     step: 1,
   },
   {

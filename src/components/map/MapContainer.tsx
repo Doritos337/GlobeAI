@@ -14,26 +14,24 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
   const mapRef = useRef<Map | null>(null);
   
   const filters = useStore((state) => state.filters);
-  const { setSelectedCountry, toggleModal } = useStore();
+  const setSelectedCountry = useStore((state) => state.setSelectedCountry);
+  const toggleModal = useStore((state) => state.toggleModal);
 
   const filteredGeoJson = useMemo(() => {
     if (!countriesGeoJson?.features) {
       return { type: 'FeatureCollection', features: [] };
     }
-
     const geoJsonCopy = JSON.parse(JSON.stringify(countriesGeoJson));
-    
-    // ✅ ИСПРАВЛЕНИЕ: Используем правильное имя свойства 'ISO3166-1-Alpha-2'
     geoJsonCopy.features = geoJsonCopy.features.filter(
       (feature: GeoJSON.Feature) => feature.properties && feature.properties['ISO3166-1-Alpha-2']
     );
-    
     return geoJsonCopy;
   }, [countriesGeoJson]);
 
-
+  // Хук для инициализации карты
   useEffect(() => {
     if (!filteredGeoJson || mapRef.current || !mapContainerRef.current) return;
+
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
@@ -41,31 +39,21 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
       center: [10, 30],
       zoom: 1.5,
     });
-
     mapRef.current = map;
-
-    map.on('error', (e) => console.error('ОШИБКА MAPLIBRE:', e));
-
+    map.on('error', (e) => console.error('MAPLIBRE ERROR:', e));
     map.on('load', () => {
       map.addSource('countries-source', {
         type: 'geojson',
         data: filteredGeoJson, 
-        // Убеждаемся, что здесь тоже правильное имя
         promoteId: 'ISO3166-1-Alpha-2'
       });
-
-      // Слой заливки стран
+      
       map.addLayer({
         id: 'countries-fill',
         type: 'fill',
         source: 'countries-source',
-        paint: {
-          'fill-color': '#4A69FF',
-          'fill-opacity': [ 'case', ['boolean', ['feature-state', 'hover'], false], 0.8, 0.5 ]
-        }
+        paint: { 'fill-color': '#4A69FF', 'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.8, 0.5] }
       });
-
-      // Слой для границ
       map.addLayer({
         id: 'countries-outline',
         type: 'line',
@@ -73,9 +61,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
         paint: { 'line-color': '#AFFF5C', 'line-width': 1 }
       });
 
-      let hoveredCountryId: string | number | undefined = undefined;
-
-      // Обработчик наведения мыши
+      let hoveredCountryId: string | number | undefined;
       map.on('mousemove', 'countries-fill', (e) => {
         if (e.features?.length) {
             map.getCanvas().style.cursor = 'pointer';
@@ -88,8 +74,6 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
             }
         }
       });
-
-      // Обработчик, когда мышь уходит с полигона
       map.on('mouseleave', 'countries-fill', () => {
         map.getCanvas().style.cursor = '';
         if (hoveredCountryId) {
@@ -97,8 +81,6 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
         }
         hoveredCountryId = undefined;
       });
-
-      // Обработчик клика по стране
       map.on('click', 'countries-fill', (e) => {
         if (e.features?.length) {
           const countryInfo = e.features[0].properties;
@@ -112,6 +94,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
+  // ✅ Массив зависимостей с постоянным размером (3 элемента)
   }, [filteredGeoJson, setSelectedCountry, toggleModal]);
 
   // Хук для реакции на изменение фильтров
@@ -121,13 +104,30 @@ const MapContainer: React.FC<MapContainerProps> = ({ countriesGeoJson }) => {
 
     const filterExpression: any[] = ['all'];
 
+    // ✅ ГЛАВНОЕ ИСПРАВЛЕНИЕ: Определяем начальные ("выключенные") значения для каждого фильтра
+    const initialFilterValues = {
+      happiness_level_score: 0,
+      cost_of_country_score: 0,
+      traffic_safety_score: 0,
+      avg_temp_winter_c: 0,
+    };
+
     (Object.keys(filters) as Array<keyof Filters>).forEach(key => {
-      const value = filters[key];
-      if (value != null) {
-        filterExpression.push(['>=', ['get', key], value]);
+      const currentValue = filters[key];
+      const initialValue = initialFilterValues[key];
+
+      // Добавляем условие, только если значение фильтра было изменено пользователем
+      if (currentValue !== initialValue) {
+        filterExpression.push(['has', key]); // 1. Проверяем, что свойство существует
+
+        // 2. Добавляем правило сравнения
+
+          filterExpression.push(['>=', ['get', key], currentValue]);
       }
     });
 
+    // Применяем собранное выражение. Если ни один фильтр не изменен,
+    // в массиве будет только ['all'], и карта применит null (покажет все).
     map.setFilter('countries-fill', filterExpression.length > 1 ? filterExpression : null);
     map.setFilter('countries-outline', filterExpression.length > 1 ? filterExpression : null);
 

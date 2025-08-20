@@ -51,9 +51,9 @@ interface AppState {
 // Задаем начальные значения для фильтров.
 // Здесь мы устанавливаем максимально широкие диапазоны.
 const initialFilters: Filters = {
-  happiness_level_score: 5,
-  cost_of_country_score: 5,
-  traffic_safety_score: 5,
+  happiness_level_score: 0,
+  cost_of_country_score: 0,
+  traffic_safety_score: 0,
   avg_temp_winter_c: 0,
 };
 

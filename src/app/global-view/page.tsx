@@ -1,13 +1,13 @@
-// Импортируем наш единый экземпляр пула соединений.
+// Import the shared instance of the connection pool.
 import pool from '@/lib/db';
-// Импортируем встроенные модули Node.js для работы с файловой системой и путями.
+// Import Node.js built-in modules for working with the file system and paths.
 import fs from 'fs/promises';
 import path from 'path';
-// Импортируем клиентский компонент.
+// Import the client component.
 import GlobalViewClient from './GlobalViewClient';
 
-// Определяем тип для данных страны для лучшей читаемости и поддержки кода.
-// Этот тип должен соответствовать структуре вашей таблицы 'countries'.
+// Define the type for country data for better readability and code maintenance.
+// This type should match the structure of your 'countries' table.
 type CountryData = {
     id: number;
     name: string;
@@ -34,42 +34,45 @@ type CountryData = {
 };
 
 /**
- * Асинхронная функция для загрузки и ОБЪЕДИНЕНИЯ данных.
+ * An asynchronous function to load and MERGE data.
  */
 async function getData() {
   try {
-    // --- Шаг 1: Загрузка данных о странах из PostgreSQL ---
+    // --- Step 1: Load data from PostgreSQL ---
     const countriesResult = await pool.query('SELECT * FROM countries');
-    const countriesData: CountryData = countriesResult.rows;
+    const countriesData: CountryData[] = countriesResult.rows;
 
-    // Создаем карту для быстрого доступа к данным по ISO коду (O(1) сложность поиска)
     const countriesDataMap = new Map(
       countriesData.map(country => [country.iso_alpha2, country])
     );
 
-    // --- Шаг 2: Загрузка географических данных из файла GeoJSON ---
+    // --- Step 2: Load GeoJSON data ---
     const geoJsonPath = path.join(process.cwd(), 'public/data/countries.geojson');
     const geoJsonFile = await fs.readFile(geoJsonPath, 'utf-8');
-    const countriesGeoJson = JSON.parse(geoJsonFile);
+    const countriesGeoJson = JSON.parse(geoJsonFile) as GeoJSON.FeatureCollection;
 
-    // --- Шаг 3 (НОВЫЙ): Обогащение GeoJSON данными из базы ---
-    // Мы проходим по каждому объекту (feature) в GeoJSON и добавляем ему нужные свойства.
-    countriesGeoJson.features.forEach((feature: any) => {
-      const countryData = countriesDataMap.get(feature.properties.ISO_A2);
-      if (countryData) {
-        // Добавляем все необходимые для карты поля в properties
-        feature.properties.name = countryData.name;
-        feature.properties.capital = countryData.capital;
-        feature.properties.population = countryData.population;
-        feature.properties.happiness_level_score = countryData.happiness_level_score;
-        feature.properties.cost_of_country_score = countryData.cost_of_country_score;
-        feature.properties.traffic_safety_score = countryData.traffic_safety_score;
-        feature.properties.avg_temp_winter_c = countryData.avg_temp_winter_c;
-        feature.properties.quality_of_life_score = countryData.quality_of_life_score;
+    // --- Step 3: Enrich GeoJSON with data from the database ---
+    countriesGeoJson.features.forEach((feature) => {
+      if (feature.properties) {
+        const geoJsonIsoCode = feature.properties['ISO3166-1-Alpha-2'];
+        const countryDataFromDb = countriesDataMap.get(geoJsonIsoCode);
+        
+        if (countryDataFromDb) {
+          // ✅ FINAL FIX: Manually assign properties and convert numbers
+          // This ensures all filterable data is of the correct number type.
+          feature.properties.name = countryDataFromDb.name;
+          feature.properties.capital = countryDataFromDb.capital;
+          feature.properties.population = Number(countryDataFromDb.population);
+          feature.properties.happiness_level_score = Number(countryDataFromDb.happiness_level_score);
+          feature.properties.cost_of_country_score = Number(countryDataFromDb.cost_of_country_score);
+          feature.properties.traffic_safety_score = Number(countryDataFromDb.traffic_safety_score);
+          feature.properties.avg_temp_winter_c = Number(countryDataFromDb.avg_temp_winter_c);
+          feature.properties.quality_of_life_score = Number(countryDataFromDb.quality_of_life_score);
+          // Add any other numerical scores here in the same way
+        }
       }
     });
 
-    // Возвращаем ОДИН обогащенный GeoJSON.
     return { countriesGeoJson };
 
   } catch (error) {
@@ -79,15 +82,15 @@ async function getData() {
 }
 
 /**
- * Главный компонент страницы.
+ * The main page component, displayed at the /global-view route.
  */
 export default async function GlobalViewPage() {
-  // Получаем единый, обогащенный набор данных.
+  // Get the single, enriched dataset.
   const { countriesGeoJson } = await getData();
 
   return (
     <main className="relative w-screen h-screen overflow-hidden">
-      {/* Передаем в клиентский компонент только один пропс */}
+      {/* Pass only one prop to the client component */}
       <GlobalViewClient
         countriesGeoJson={countriesGeoJson}
       />

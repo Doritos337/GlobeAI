@@ -17,19 +17,30 @@ export async function POST(req: Request) {
 
     // Промпт остается без изменений
     const prompt = `
-      You are an expert travel advisor for digital nomads and remote workers.
-      Based on the following data for ${countryData.name}, write a concise, insightful, and appealing summary (3-4 sentences) for a person considering this country for a long-term stay.
-      Highlight the key pros and cons based on the provided metrics. The tone should be objective but engaging.
+     You are an expert travel advisor and geopolitical analyst. Your tone must be strictly objective, neutral, and analytical. Do not use appealing or engaging language. Your goal is to provide a realistic overview for a digital nomad.
 
-      Data:
-      - Quality of Life Score: ${countryData.quality_of_life_score?? 'N/A'}/10
-      - Cost of Living Score: ${countryData.cost_of_country_score?? 'N/A'}/10
-      - Happiness Level: ${countryData.happiness_level_score?? 'N/A'}/10
-      - English Proficiency Score: ${countryData.english_proficiency_score?? 'N/A'}/10
-      - Safety Score: ${countryData.traffic_safety_score?? 'N/A'}/10
-      - Average Winter Temperature: ${countryData.avg_temp_winter_c?? 'N/A'}°C
+  Based on the comprehensive data below for ${countryData.name}, write a detailed, multi-paragraph summary (minimum 100 words).
 
-      Focus on the lifestyle implications of these numbers. If data for a metric is 'N/A', acknowledge that information is not available for that point.
+  Your analysis MUST cover these specific aspects in separate paragraphs:
+  1.  **Lifestyle and Quality of Life:** Analyze happiness, safety, and overall quality of life.
+  2.  **Economic Environment:** Analyze the cost of living, career opportunities, and the general economy score.
+  3.  **Social Environment:** Analyze English proficiency and friendliness to foreigners.
+  4.  **Climate:** Briefly mention the climate based on the provided winter temperatures.
+
+  Crucially, highlight both significant advantages AND notable disadvantages (cons). Do not try to "sell" the country or be overly positive. Base your entire analysis ONLY on the data provided.
+
+  Data:
+  - Name: ${countryData.name}
+  - Quality of Life Score: ${countryData.quality_of_life_score ?? 'N/A'} / 10
+  - Cost of Living Score: ${countryData.cost_of_country_score ?? 'N/A'} / 10
+  - Happiness Level: ${countryData.happiness_level_score ?? 'N/A'} / 10
+  - English Proficiency Score: ${countryData.english_proficiency_score ?? 'N/A'} / 10
+  - Safety Score: ${countryData.traffic_safety_score ?? 'N/A'} / 10
+  - Career Opportunities Score: ${countryData.career_opportunities_score ?? 'N/A'} / 10
+  - Economy Score: ${countryData.economy_score ?? 'N/A'} / 10
+  - Friendliness to Foreigners Score: ${countryData.friendly_to_foreigners_score ?? 'N/A'} / 10
+  - Average Winter Temperature: ${countryData.avg_temp_winter_c ?? 'N/A'}°C
+  - Average Summer Temperature: ${countryData.avg_temp_summer_c ?? 'N/A'}°C
     `;
 
     // ✅ КОРРЕКТНО: Вызов generateContent непосредственно на экземпляре клиента.
@@ -39,7 +50,7 @@ export async function POST(req: Request) {
       contents: [{ role: "user", parts: [{ text: prompt }] }], // Использование структурированного формата для ясности
       config: {
         thinkingConfig: {
-          thinkingBudget: 0, // Disables thinking
+          thinkingBudget: 3, // Disables thinking
         },
       }
     });

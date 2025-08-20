@@ -1,16 +1,1 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* 
-  ДОБАВЬТЕ ЭТИ СТРОКИ
-  Этот код гарантирует, что все родительские элементы занимают 100% высоты,
-  что необходимо для корректной работы h-screen и h-full во вложенных элементах.
-*/
-html,
-body,
-#__next {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
+@import "tailwindcss";
